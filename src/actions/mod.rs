@@ -64,24 +64,33 @@ pub trait Action {
     fn run(&self, manifest: &Manifest, context: &Context) -> Result<ActionResult>;
 
     fn dry_run(&self, manifest: &Manifest, context: &Context) -> Result<ActionResult>;
-
     fn changeset(&self, manifest: &Manifest, _context: &Context) -> Option<ChangeSet> {
         Some(ChangeSet {
-            changes: vec![Change {
-                action: manifest.name.clone().unwrap_or("unknown".to_string()),
-                change: String::from("No ChangeSet implementation, assuming always needs executed"),
-            }],
+            changes: vec![Box::new(NoOp)],
         })
     }
 }
 
+pub trait Atom: std::fmt::Debug {
+    fn apply(&self, ctx: &Context) -> Result<()>; // Apply new to old
+    fn revert(&self); // Revert new to old
+    fn diff(&self); // Print a string that describes what it will do. Show old and new values
+}
+
 #[derive(Debug)]
-pub struct Change {
-    pub action: String, // Which action: "package.install"
-    pub change: String, // What needs to happen: "The requested packages, vim and emacs, are currently missing"
+struct NoOp;
+
+impl Atom for NoOp {
+    fn apply(&self, _ctx: &Context) -> Result<()> {
+        Ok(())
+    }
+
+    fn revert(&self) {}
+
+    fn diff(&self) {}
 }
 
 #[derive(Debug)]
 pub struct ChangeSet {
-    changes: Vec<Change>,
+    changes: Vec<Box<dyn Atom>>,
 }

@@ -1,5 +1,6 @@
 pub mod copy;
 pub mod link;
+pub mod template;
 
 use std::path::PathBuf;
 
